@@ -1,4 +1,5 @@
-cat > ~/server.py <<'PY'
+#cat > ~/server.py <<'PY'
+# Console command to initiate web RTC server. 
 import asyncio, json
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
