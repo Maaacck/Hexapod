@@ -1,61 +1,36 @@
-#!/usr/bin/env python3
-"""
-Board.py — Minimal helper layer for Hiwonder bus servos (direct bus).
-If you are using the USB Servo Controller, talk to it via its own serial protocol instead.
-"""
-from typing import Optional
-from BusServoCmd import BusServo
+#!/usr/bin/python3
+# encoding: utf-8
+# Copyright 2020-2022 ians.moyes@gmail.com
 
-_pwm_servo_angle = [90.0] * 6   # degrees (bookkeeping)
-_pwm_servo_pulse = [1500] * 6   # us (bookkeeping)
+import serial
+import time
+import RPi.GPIO as GPIO
 
-_bus: Optional[BusServo] = None
+SERVO_FRAME_HEADER = 0x55
 
-def init_bus(port: str = "/dev/serial0", baud: int = 115200, dir_pins=None) -> BusServo:
-    global _bus
-    _bus = BusServo(port=port, baud=baud, dir_pins=dir_pins)
-    return _bus
+serialHandle = serial.Serial("/dev/ttyAMA0", 115200)  # 初始化串口， 波特率为115200
 
-# --- PWM helpers (bookkeeping only) ---
-def setPWMServoAngle(index: int, angle: float) -> float:
-    if not (1 <= index <= 6):
-        raise AttributeError(f"Invalid PWM Servo index: {index}")
-    i = index - 1
-    angle = max(0.0, min(180.0, float(angle)))
-    _pwm_servo_angle[i] = angle
-    _pwm_servo_pulse[i] = int(500 + (angle / 180.0) * 2000)
-    return _pwm_servo_angle[i]
+def portInit():  # 配置单线串口为输出
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(17, GPIO.OUT, initial=False)
+    GPIO.setup(27, GPIO.OUT, initial=True)
 
-def getPWMServoAngle(index: int) -> float:
-    if not (1 <= index <= 6):
-        raise AttributeError(f"Invalid PWM Servo index: {index}")
-    return _pwm_servo_angle[index - 1]
+def portWrite():  # 配置单线串口为输出
+    GPIO.output(17, 0)
+    GPIO.output(27, 1)
 
-def getPWMServoPulse(index: int) -> int:
-    if not (1 <= index <= 6):
-        raise AttributeError(f"Invalid PWM Servo index: {index}")
-    return _pwm_servo_pulse[index - 1]
+def portRead():  # 配置单线串口为输入
+    GPIO.output(17, 1)
+    GPIO.output(27, 0)
 
-# --- Bus-servo helpers ---
-def setBusServoPulse(servo_id: int, pulse: int, time_ms: int = 500):
-    if _bus is None:
-        raise RuntimeError("Bus not initialized. Call init_bus() first.")
-    _bus.move_time_write(servo_id, pulse, time_ms)
+def portReset():
+    time.sleep(0.1)
+    serialHandle.close()
+    portWrite()
+    serialHandle.open()
+    time.sleep(0.1)
 
-def getBusServoPulse(servo_id: int):
-    if _bus is None:
-        raise RuntimeError("Bus not initialized. Call init_bus() first.")
-    return _bus.pos_read(servo_id)
-
-def unloadBusServo(servo_id: int):
-    if _bus is None:
-        raise RuntimeError("Bus not initialized. Call init_bus() first.")
-    _bus.unload(servo_id)
-
-def loadBusServo(servo_id: int):
-    if _bus is None:
-        raise RuntimeError("Bus not initialized. Call init_bus() first.")
-    _bus.load(servo_id)
-
-def resetBusServoPulse(servo_id: int):
-    setBusServoPulse(servo_id, 500, 500)
+def portOff():
+    serialHandle.close()
+    GPIO.output(17, 0)
+    GPIO.output(27, 0)
