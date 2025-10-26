@@ -4,5 +4,4 @@ This is the repository that holds the control data for our hexapod robot as well
 
 # Credits
 
-https://github.com/IanSMoyes/SpiderPi
-https://github.com/sohamsarpotdar2001/Hexapod 
+https://github.com/IanSMoyes/SpiderPi and https://github.com/sohamsarpotdar2001/Hexapod 
